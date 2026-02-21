@@ -1,0 +1,175 @@
+# General
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows thumbnail cache files
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+
+# Dump file
+*.stackdump
+
+# Folder config file
+[Dd]esktop.ini
+
+# Recycle Bin used on file shares
+$RECYCLE.BIN/
+
+# Linux fuse temp
+.fuse_hidden*
+
+# KDE directory preferences
+.directory
+
+# Linux trash folder
+.Trash-*
+
+# Linux .nfs files
+.nfs*
+
+# vim swap
+[._]*.s[a-v][a-z]
+!*.svg  # comment out if you don't need vector files
+[._]*.sw[a-p]
+[._]s[a-rt-v][a-z]
+[._]ss[a-gi-z]
+[._]sw[a-p]
+
+# vim session
+Session.vim
+Sessionx.vim
+
+# vim temporary
+.netrwhist
+*~
+
+# vim auto-generated tag files
+tags
+
+# vim persistent undo
+[._]*.un~
+
+# Visual Studio Code
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+!.vscode/*.code-snippets
+
+# Local History for Visual Studio Code
+.history/
+
+# IntelliJ related
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# LibreOffice locks
+.~lock.*#
+
+# dotenv environment variable files
+# .env
+*.local
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+.pnpm-debug.log*
+
+# Diagnostic reports (https://nodejs.org/api/report.html)
+report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
+
+# REPL history
+.node_repl_history
+
+# Compiled output
+/build/
+/target/
+/dist/
+/dist-ssr/
+
+# Flutter/Dart/Pub related
+**/doc/api/
+**/ios/Flutter/.last_build_id
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.pub-cache/
+.pub/
+
+# Symbolication related
+app.*.symbols
+
+# Obfuscation related
+app.*.map.json
+
+# Android Studio will place build artifacts here
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# Dependency directories
+node_modules/
+jspm_packages/
+
+# npm cache directory
+.npm
+
+# Yarn Integrity file
+.yarn-integrity
+
+# yarn v2
+.yarn/cache
+.yarn/unplugged
+.yarn/build-state.yml
+.yarn/install-state.gz
+.pnp.*
+
+# eslint cache
+.eslintcache
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Miscellaneous
+*.class
+*.pyc
+*.swp
+.atom/
+.buildlog/
+.svn/
+migrate_working_dir/

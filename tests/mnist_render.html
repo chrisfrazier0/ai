@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MNIST Preview</title>
+</head>
+<body>
+  <h2>MNIST Preview</h2>
+  <canvas id="c0"></canvas>
+  <canvas id="c1"></canvas>
+  <canvas id="c2"></canvas>
+  <canvas id="c3"></canvas>
+  <canvas id="c4"></canvas>
+  <canvas id="c5"></canvas>
+  <canvas id="c6"></canvas>
+  <canvas id="c7"></canvas>
+  <canvas id="c8"></canvas>
+  <canvas id="c9"></canvas>
+  <script>
+    async function loadMNIST() {
+      const res = await fetch('../data/train-images-idx3-ubyte');
+      const buffer = await res.arrayBuffer();
+      const view = new DataView(buffer);
+
+      // Read header (big-endian)
+      const magic = view.getUint32(0, false);
+      const count = view.getUint32(4, false);
+      const rows = view.getUint32(8, false);
+      const cols = view.getUint32(12, false);
+
+      console.log({ magic, count, rows, cols });
+
+      const imageSize = rows * cols;
+      const dataOffset = 16;
+
+      for (let i = 0; i < 10; i++) {
+        drawImage(i, buffer, dataOffset, imageSize, rows, cols);
+      }
+    }
+
+    async function loadLabels() {
+      const res = await fetch('../data/train-labels-idx1-ubyte');
+      const buf = await res.arrayBuffer();
+      const view = new DataView(buf);
+
+      // Read header (big-endian)
+      const magic = view.getUint32(0, false);
+      const count = view.getUint32(4, false);
+
+      console.log(magic, count);
+
+      const labels = new Uint8Array(buf, 8);
+      console.log(
+        labels[0],
+        labels[1],
+        labels[2],
+        labels[3],
+        labels[4],
+        labels[5],
+        labels[6],
+        labels[7],
+        labels[8],
+        labels[9]
+      );
+    }
+
+    function drawImage(index, buffer, offset, size, rows, cols) {
+      const canvas = document.getElementById('c' + index);
+      const ctx = canvas.getContext('2d');
+
+      canvas.width = cols;
+      canvas.height = rows;
+
+      const bytes = new Uint8Array(buffer);
+      const start = offset + index * size;
+      const img = ctx.createImageData(cols, rows);
+
+      for (let i = 0; i < size; i++) {
+        const v = bytes[start + i];
+        const inv = 255 - v;
+
+        img.data[i * 4 + 0] = inv; // R
+        img.data[i * 4 + 1] = inv; // G
+        img.data[i * 4 + 2] = inv; // B
+        img.data[i * 4 + 3] = 255; // A
+      }
+
+      ctx.putImageData(img, 0, 0);
+    }
+
+    loadMNIST();
+    loadLabels();
+  </script>
+</body>
+</html>

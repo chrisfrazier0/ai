@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="author" content="Chris Frazier" />
+  <title>MNIST Demo</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%AA%84%3C/text%3E%3C/svg%3E" />
+  <style>
+    :root{
+      --bg: #0b1220;
+      --panel: rgba(255,255,255,.06);
+      --panel-2: rgba(255,255,255,.09);
+      --text: rgba(255,255,255,.92);
+      --muted: rgba(255,255,255,.70);
+      --muted-2: rgba(255,255,255,.55);
+      --border: rgba(255,255,255,.12);
+      --shadow: 0 14px 40px rgba(0,0,0,.35);
+      --ring: 0 0 0 4px rgba(122,162,255,.18);
+      --accent: #7aa2ff;
+      --accent-2: #7ef0c1;
+      --danger: #ff6b6b;
+
+      --radius: 16px;
+      --radius-sm: 12px;
+
+      --max: 980px;
+    }
+    *{ box-sizing: border-box; }
+    html{ height: 100%; }
+    body{
+      margin: 0;
+      min-height: 100%;
+      color: var(--text);
+      font: 16px/1.5 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji";
+      background:
+        radial-gradient(1200px 800px at 20% -10%, rgba(122,162,255,.25), transparent 60%),
+        radial-gradient(900px 700px at 110% 20%, rgba(126,240,193,.16), transparent 55%),
+        radial-gradient(700px 500px at 50% 110%, rgba(255,255,255,.06), transparent 55%),
+        var(--bg);
+      background-attachment: fixed;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    a{ color: inherit; }
+
+    .page{
+      min-height: 100%;
+      display: flex;
+      flex-direction: column;
+    }
+    .page__header{
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      backdrop-filter: blur(10px);
+      background: linear-gradient(to bottom, rgba(11,18,32,.78), rgba(11,18,32,.55));
+      border-bottom: 1px solid var(--border);
+    }
+    .page__header-inner{
+      max-width: var(--max);
+      margin: 0 auto;
+      padding: 14px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .page__main{
+      max-width: var(--max);
+      width: 100%;
+      margin: 0 auto;
+      padding: 18px 16px 40px;
+      display: grid;
+      gap: 16px;
+    }
+
+    .brand{
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      min-width: 0;
+    }
+    .brand__emoji{
+      width: 38px;
+      height: 38px;
+      display: grid;
+      place-items: center;
+      border-radius: 12px;
+      background: rgba(255,255,255,.06);
+      border: 1px solid var(--border);
+      box-shadow: 0 8px 22px rgba(0,0,0,.25);
+      flex: 0 0 auto;
+      font-size: 20px;
+    }
+    .brand__title{
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+      min-width: 0;
+    }
+    .brand__title h1{
+      margin: 0;
+      font-size: 16px;
+      letter-spacing: .2px;
+      font-weight: 700;
+      line-height: 1.2;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .brand__subtitle{
+      margin: 0;
+      font-size: 12px;
+      color: var(--muted-2);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .card{
+      background: linear-gradient(180deg, rgba(255,255,255,.07), rgba(255,255,255,.05));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      overflow: hidden;
+    }
+    .card__inner{
+      padding: 16px;
+    }
+
+    .intro{
+      display: grid;
+      gap: 10px;
+    }
+    .intro__headline{
+      margin: 0;
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: .2px;
+    }
+    .intro__text{
+      margin: 0;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .intro__tips{
+      margin: 0;
+      padding-left: 18px;
+      color: var(--muted);
+      font-size: 14px;
+    }
+    .intro__tips li{ margin: 6px 0; }
+
+    .layout{
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    @media (min-width: 860px){
+      .layout{
+        grid-template-columns: 1.25fr .75fr;
+        align-items: start;
+      }
+    }
+
+    .draw{
+      display: grid;
+      gap: 14px;
+    }
+    .draw__row{
+      display: grid;
+      gap: 12px;
+      align-items: start;
+    }
+
+    @media (min-width: 520px){
+      .draw__row{
+        grid-template-columns: 1fr auto;
+        gap: 16px;
+      }
+    }
+
+    .canvas-panel{
+      display: grid;
+      gap: 10px;
+    }
+    .canvas-panel__label{
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .canvas-panel__title{
+      margin: 0;
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: .2px;
+    }
+    .canvas-panel__hint{
+      margin: 0;
+      font-size: 12px;
+      color: var(--muted-2);
+    }
+    .canvas-panel__surface{
+      display: grid;
+      place-items: center;
+      padding: 14px;
+      border-radius: var(--radius);
+      background: rgba(0,0,0,.22);
+      border: 1px solid rgba(255,255,255,.10);
+    }
+
+    .mnist-canvas{
+      display: block;
+      border: 1px solid rgba(255,255,255,.22);
+      border-radius: 10px;
+      background: #fff;
+      touch-action: none;
+      box-shadow: 0 10px 24px rgba(0,0,0,.25);
+    }
+    .mnist-canvas--small{
+      background: #000;
+      border-radius: 4px;
+    }
+
+    .controls{
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+
+    .btn{
+      appearance: none;
+      border: 1px solid rgba(255,255,255,.16);
+      background: rgba(255,255,255,.08);
+      color: var(--text);
+      border-radius: 12px;
+      padding: 10px 12px;
+      font-weight: 650;
+      font-size: 13px;
+      letter-spacing: .2px;
+      cursor: pointer;
+      transition: transform .06s ease, background .12s ease, border-color .12s ease;
+      user-select: none;
+    }
+    .btn:hover{
+      background: rgba(255,255,255,.11);
+      border-color: rgba(255,255,255,.22);
+    }
+    .btn:active{ transform: translateY(1px); }
+    .btn:focus-visible{
+      outline: none;
+      box-shadow: var(--ring);
+      border-color: rgba(122,162,255,.55);
+    }
+
+    .results{
+      display: grid;
+      gap: 12px;
+    }
+    .results__grid{
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+    }
+
+    .metric{
+      padding: 14px;
+      border-radius: var(--radius-sm);
+      border: 1px solid rgba(255,255,255,.12);
+      background: rgba(255,255,255,.06);
+      min-height: 86px;
+      display: grid;
+      gap: 6px;
+    }
+    .metric__label{
+      font-size: 12px;
+      color: var(--muted-2);
+      margin: 0;
+      letter-spacing: .2px;
+    }
+    .metric__value{
+      margin: 0;
+      font-size: 36px;
+      line-height: 1;
+      font-weight: 800;
+      letter-spacing: .4px;
+      font-variant-numeric: tabular-nums;
+    }
+    .metric__value--dash{
+      color: rgba(255,255,255,.55);
+      font-weight: 700;
+    }
+
+    .confidence{
+      display: grid;
+      gap: 10px;
+    }
+    .confidence__row{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 15px;
+    }
+    .confidence__bar{
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      border: 1px solid rgba(255,255,255,.10);
+      overflow: hidden;
+    }
+    .confidence__fill{
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+      box-shadow: 0 0 0 1px rgba(0,0,0,.25) inset;
+      transition: width .18s ease;
+    }
+
+    .meta{
+      margin-top: 2px;
+      font-size: 12px;
+      color: var(--muted-2);
+    }
+
+    .footer{
+      max-width: var(--max);
+      width: 100%;
+      margin: 0 auto;
+      padding: 0 16px 22px;
+      color: var(--muted-2);
+      font-size: 12px;
+    }
+
+    .kbd{
+      display: inline-block;
+      padding: 2px 7px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,.14);
+      background: rgba(255,255,255,.06);
+      color: rgba(255,255,255,.86);
+      font-size: 12px;
+      font-weight: 650;
+      letter-spacing: .1px;
+      vertical-align: baseline;
+      white-space: nowrap;
+    }
+
+    @media (max-width: 420px){
+      .metric__value{ font-size: 32px; }
+      .card__inner{ padding: 14px; }
+      .page__main{ padding-bottom: 28px; }
+    }
+
+    /* accessibility */
+    @media (prefers-reduced-motion: reduce){
+      .btn, .confidence__fill{ transition: none; }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="page">
+    <header class="page__header">
+      <div class="page__header-inner">
+        <div class="brand">
+          <div class="brand__emoji" aria-hidden="true">🪄</div>
+          <div class="brand__title">
+            <h1>MNIST Demo</h1>
+            <p class="brand__subtitle">Draw a digit • CNN inference in the browser • <a href="https://github.com/chrisfrazier0/ai">GitHub Repository</a></p>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="page__main">
+      <section class="card">
+        <div class="card__inner intro">
+          <h2 class="intro__headline">How it works</h2>
+          <p class="intro__text">
+            Draw a single digit on the large canvas. Your drawing is downsampled to 28×28, inverted to match MNIST,
+            then fed into a from-scratch CNN model (no dependencies).
+          </p>
+          <ul class="intro__tips">
+            <li>Use a single stroke when possible and leave a little margin around the digit.</li>
+            <li>If a prediction looks off, tap <span class="kbd">Clear</span> and try again.</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="layout">
+        <section class="card draw">
+          <div class="card__inner draw__row">
+            <div class="canvas-panel">
+              <div class="canvas-panel__label">
+                <p class="canvas-panel__title">Draw</p>
+              </div>
+              <div class="canvas-panel__surface">
+                <canvas id="big" class="mnist-canvas mnist-canvas--big" width="200" height="200"></canvas>
+              </div>
+            </div>
+
+            <div class="canvas-panel">
+              <div class="canvas-panel__label">
+                <p class="canvas-panel__title">28x28</p>
+              </div>
+              <div class="canvas-panel__surface">
+                <canvas id="small" class="mnist-canvas mnist-canvas--small" width="28" height="28"></canvas>
+              </div>
+
+              <div class="controls">
+                <button id="clear" class="btn" type="button">Clear</button>
+              </div>
+
+              <p class="meta">Model: <code>data/model_cnn.json</code></p>
+            </div>
+          </div>
+        </section>
+
+        <aside class="card results">
+          <div class="card__inner">
+            <div class="results__grid">
+              <div class="metric">
+                <p class="metric__label">Prediction</p>
+                <p class="metric__value metric__value--dash" id="num">...</p>
+              </div>
+
+              <div class="metric">
+                <p class="metric__label">Confidence</p>
+                <p class="metric__value metric__value--dash" id="confidence">...</p>
+              </div>
+            </div>
+
+            <div class="confidence" aria-label="Confidence bar">
+              <div class="confidence__row">
+                <span>Model certainty</span>
+                <span id="confidenceText">—</span>
+              </div>
+              <div class="confidence__bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+                <div class="confidence__fill" id="confidenceFill"></div>
+              </div>
+            </div>
+          </div>
+        </aside>
+      </section>
+    </main>
+
+    <footer class="footer">
+      Built for readability and learning. No third-party dependencies.
+    </footer>
+  </div>
+
+  <script type="module">
+    import { Model } from './src/model.js';
+    import { tanh } from './src/lib/math.js';
+    import { Matrix } from './src/lib/matrix.js';
+
+    const big = document.getElementById('big');
+    const small = document.getElementById('small');
+    const clearBtn = document.getElementById('clear');
+    const num = document.getElementById('num');
+
+    const confidence = document.getElementById('confidence');
+    const confidenceFill = document.getElementById('confidenceFill');
+    const confidenceText = document.getElementById('confidenceText');
+    const confidenceBar = document.querySelector('.confidence__bar');
+
+    const b = big.getContext('2d');
+    const s = small.getContext('2d');
+
+    let model = null;
+    let modelReady = false;
+
+    async function loadModel() {
+      const res = await fetch('./data/model_cnn.json', { cache: 'no-store' });
+      if (!res.ok) throw new Error(`Failed to load model_cnn.json: ${res.status}`);
+      const json = await res.json();
+      model = Model.fromJSON(json);
+      modelReady = true;
+    }
+
+    loadModel()
+      .then(() => {
+        num.textContent = '-';
+        confidence.textContent = '-';
+        confidenceText.textContent = '—';
+        confidenceFill.style.width = '0%';
+        confidenceBar.setAttribute('aria-valuenow', '0');
+      })
+      .catch((err) => {
+        console.error(err);
+        num.textContent = 'ERR';
+        confidence.textContent = 'ERR';
+        confidenceFill.style.width = '0%';
+        confidenceBar.setAttribute('aria-valuenow', '0');
+      });
+
+    function reset() {
+      b.fillStyle = '#fff';
+      b.fillRect(0, 0, big.width, big.height);
+
+      s.fillStyle = '#000';
+      s.fillRect(0, 0, 28, 28);
+
+      num.textContent = '-';
+      confidence.textContent = '-';
+      confidenceText.textContent = '—';
+      confidenceFill.style.width = '0%';
+      confidenceBar.setAttribute('aria-valuenow', '0');
+    }
+    reset();
+
+    let drawing = false;
+    let last = null;
+
+    function position(e) {
+      const r = big.getBoundingClientRect();
+      const p = e.touches ? e.touches[0] : e;
+      return {
+        x: (p.clientX - r.left) * (big.width / r.width),
+        y: (p.clientY - r.top)  * (big.height / r.height)
+      };
+    }
+
+    function start(e) {
+      e.preventDefault();
+      drawing = true;
+      last = position(e);
+    }
+
+    function move(e) {
+      if (!drawing) return;
+      e.preventDefault();
+      const p = position(e);
+
+      b.strokeStyle = '#000';
+      b.lineWidth = 12;
+      b.lineCap = 'round';
+      b.lineJoin = 'round';
+
+      b.beginPath();
+      b.moveTo(last.x, last.y);
+      b.lineTo(p.x, p.y);
+      b.stroke();
+
+      last = p;
+      update28();
+    }
+
+    function end() {
+      if (!drawing) return;
+      drawing = false;
+      last = null;
+      predict();
+    }
+
+    function update28() {
+      s.clearRect(0, 0, 28, 28);
+      s.drawImage(big, 0, 0, 28, 28);
+
+      const img = s.getImageData(0, 0, 28, 28);
+      const data = img.data;
+
+      for (let i = 0; i < data.length; i += 4) {
+        const v = data[i];
+        const inv = 255 - v;
+
+        data[i + 0] = inv;
+        data[i + 1] = inv;
+        data[i + 2] = inv;
+        data[i + 3] = 255;
+      }
+
+      s.putImageData(img, 0, 0);
+    }
+
+    function predict() {
+      if (!modelReady) return;
+
+      const img = s.getImageData(0, 0, 28, 28).data;
+      const row = new Array(28 * 28);
+
+      for (let i = 0, k = 0; i < img.length; i += 4, k++) {
+        const px = img[i]; // red channel
+        row[k] = (px / 255) * 2 - 1; // pseudo normalize
+      }
+
+      const X = new Matrix([row]);
+      const P = model.forward(X);
+
+      const probs = P.data[0];
+      const pred = model.finalize(probs);
+
+      let p1 = probs[pred];
+      let p2 = -Infinity;
+      for (let j = 0; j < probs.length; j++) {
+        if (j === pred) continue;
+        if (probs[j] > p2) p2 = probs[j];
+      }
+
+      // penalize for small margins, reward large margins
+      const m = p1 - p2;
+      const c = p1 + 0.7 * (1 - p1) * tanh(3 * (m - 0.3));
+      const pct = Math.max(0, Math.min(100, Math.floor(100 * c)));
+
+      num.textContent = String(pred);
+      confidence.textContent = pct + '%';
+      confidenceText.textContent = pct + '%';
+      confidenceFill.style.width = pct + '%';
+      confidenceBar.setAttribute('aria-valuenow', String(pct));
+    }
+
+    // mouse
+    big.addEventListener('mousedown', start);
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', end);
+
+    // touch
+    big.addEventListener('touchstart', start, { passive:false });
+    big.addEventListener('touchmove', move, { passive:false });
+    window.addEventListener('touchend', end);
+
+    // clear
+    clearBtn.addEventListener('click', reset);
+  </script>
+</body>
+</html>
