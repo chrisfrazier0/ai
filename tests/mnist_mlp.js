@@ -122,6 +122,6 @@ const Ptest = model.forward(Xtest);
 const acc = accuracy(model, Ptest, testLabs.labels);
 console.log('accuracy:', (acc * 100).toFixed(3) + '%');
 
-const json = JSON.stringify(model, null, 2);
+const json = JSON.stringify(model);
 fs.writeFileSync(outPath, json, 'utf8');
 console.log('saved model:', outPath);

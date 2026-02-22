@@ -136,6 +136,18 @@ export class Matrix {
     return new Vector(sums);
   }
 
+  sumCols() {
+    const sums = Array(this.rowDim);
+    for (let i = 0; i < this.rowDim; i++) {
+      let s = 0;
+      for (let j = 0; j < this.colDim; j++) {
+        s += this.data[i][j];
+      }
+      sums[i] = s;
+    }
+    return new Vector(sums);
+  }
+
   takeRows(indices) {
     const rows = [];
     for (let i = 0; i < indices.length; i++) {
@@ -156,5 +168,68 @@ export class Matrix {
 
   mean() {
     return this.sum() / (this.rowDim * this.colDim);
+  }
+
+  rot180() {
+    const rows = [];
+    for (let i = this.rowDim - 1; i >= 0; i--) {
+      rows.push([...this.data[i]].reverse());
+    }
+    return new Matrix(rows);
+  }
+
+  // Technically cross-correlation (no kernel flip), but conventionally
+  // called convolution in deep learning since kernels are learned.
+  // returns: (H-k+1) x (W-k+1)
+  convolute(K) {
+    const kH = K.rowDim;
+    const kW = K.colDim;
+    const outH = this.rowDim - kH + 1;
+    const outW = this.colDim - kW + 1;
+
+    const rows = Array(outH);
+    for (let i = 0; i < outH; i++) {
+      const row = new Array(outW);
+      for (let j = 0; j < outW; j++) {
+        let s = 0;
+        for (let u = 0; u < kH; u++) {
+          const xRow = this.data[i + u];
+          const kRow = K.data[u];
+          for (let v = 0; v < kW; v++) {
+            s += xRow[j + v] * kRow[v];
+          }
+        }
+        row[j] = s;
+      }
+      rows[i] = row;
+    }
+    return new Matrix(rows);
+  }
+
+  // returns: (H+kH-1) x (W+kW-1)
+  convoluteFull(K) {
+    return this.pad(K.rowDim - 1, K.colDim - 1).convolute(K);
+  }
+
+  pad(pH, pW = pH) {
+    const P = Matrix.zeros(this.rowDim + 2 * pH, this.colDim + 2 * pW);
+    for (let i = 0; i < this.rowDim; i++) {
+      const src = this.data[i];
+      const dst = P.data[i + pH];
+      for (let j = 0; j < this.colDim; j++) {
+        dst[j + pW] = src[j];
+      }
+    }
+    return P;
+  }
+
+  unpad(pH, pW = pH) {
+    const H = this.rowDim - 2 * pH;
+    const W = this.colDim - 2 * pW;
+    const rows = Array(H);
+    for (let i = 0; i < H; i++) {
+      rows[i] = this.data[i + pH].slice(pW, pW + W);
+    }
+    return new Matrix(rows);
   }
 }

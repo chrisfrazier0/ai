@@ -10,9 +10,7 @@ export class ReluConvLayer {
 
   static fromJSON(json) {
     const source = typeof json === 'string' ? JSON.parse(json) : json;
-    const result = new ReluConvLayer();
-    Object.assign(result, source);
-    return result;
+    return new ReluConvLayer({ leaky: source.leaky });
   }
 
   forward(X) {

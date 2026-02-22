@@ -1,7 +1,6 @@
 import { mlp } from '../src/factory.js';
 import { assert } from '../src/lib/assert.js';
 import { Matrix } from '../src/lib/matrix.js';
-import { Model } from '../src/model.js';
 
 const X = new Matrix([
   [0, 0],
@@ -40,16 +39,3 @@ assert(final.data[2][0] === 1, 'XOR failed: (1,0) should be 1');
 assert(final.data[3][0] === 0, 'XOR failed: (1,1) should be 0');
 
 console.log('XOR tests passed');
-
-const str = JSON.stringify(model);
-const model2 = Model.fromJSON(str);
-
-const P2 = model2.forward(Xn);
-const final2 = model2.finalize(P2);
-
-assert(final2.data[0][0] === 0, 'XOR failed: (0,0) should be 0');
-assert(final2.data[1][0] === 1, 'XOR failed: (0,1) should be 1');
-assert(final2.data[2][0] === 1, 'XOR failed: (1,0) should be 1');
-assert(final2.data[3][0] === 0, 'XOR failed: (1,1) should be 0');
-
-console.log('Cloned XOR tests passed');

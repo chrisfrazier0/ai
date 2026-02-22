@@ -78,20 +78,17 @@ export class ConvLayer {
       `ConvLayer.forward: kernel ${k} too large for ${H}x${W}`,
     );
 
+    // Y[n][f] = b[f] + sum_c convolute(X[n][c], W[f][c])
     const Y = new Array(N);
     for (let n = 0; n < N; n++) {
-      const sample = X[n];
       const outSample = new Array(F);
-
       for (let f = 0; f < F; f++) {
-        const Yf = Matrix.fill(outH, outW, this.b[f]);
+        let Yf = Matrix.fill(outH, outW, this.b[f]);
         for (let c = 0; c < C; c++) {
-          convolute$(Yf, sample[c], this.W[f][c]);
+          Yf = Yf.add(X[n][c].convolute(this.W[f][c]));
         }
-
         outSample[f] = Yf;
       }
-
       Y[n] = outSample;
     }
 
@@ -123,8 +120,6 @@ export class ConvLayer {
     );
 
     for (let n = 0; n < N; n++) {
-      const Xsample = X[n];
-      const dXsample = dX[n];
       const dYsample = dY[n];
       assert(
         dYsample.length === F,
@@ -138,119 +133,27 @@ export class ConvLayer {
           `ConvLayer.backward: expected ${outH}x${outW}, got ${G.rowDim}x${G.colDim} at sample ${n} outChannel ${f}`,
         );
 
+        // dL/db = sum of gradient
         db[f] += G.sum();
+
         for (let c = 0; c < C; c++) {
-          convoluteGradient$(dW[f][c], Xsample[c], G);
-          convoluteInput$(dXsample[c], G, this.W[f][c]);
+          // dL/dW = convolute(X, G)
+          dW[f][c] = dW[f][c].add(X[n][c].convolute(G));
+
+          // dL/dX = convoluteFull(G, rot180(W))
+          dX[n][c] = dX[n][c].add(G.convoluteFull(this.W[f][c].rot180()));
         }
       }
     }
 
-    const invN = 1 / Math.max(N, 1);
     for (let f = 0; f < F; f++) {
-      this.b[f] -= lr * (db[f] * invN);
+      this.b[f] -= db[f] * lr;
       for (let c = 0; c < C; c++) {
-        this.W[f][c] = this.W[f][c].sub(dW[f][c].scale(lr * invN));
+        this.W[f][c] = this.W[f][c].sub(dW[f][c].scale(lr));
       }
     }
 
     this.#cache = null;
     return dX;
-  }
-}
-
-// X: H x W, K: k x k, out: (H-k+1) x (W-k+1)
-function convolute$(out, X, K) {
-  const H = X.rowDim;
-  const W = X.colDim;
-  const k = K.rowDim;
-
-  const outH = H - k + 1;
-  const outW = W - k + 1;
-
-  for (let i = 0; i < outH; i++) {
-    const outRow = out.data[i];
-
-    for (let j = 0; j < outW; j++) {
-      let s = 0;
-
-      for (let u = 0; u < k; u++) {
-        const xRow = X.data[i + u];
-        const kRow = K.data[u];
-
-        for (let v = 0; v < k; v++) {
-          s += xRow[j + v] * kRow[v];
-        }
-      }
-
-      outRow[j] += s;
-    }
-  }
-}
-
-// dK[u,v] += sum_{i,j} X[i+u, j+v] * dY[i,j]
-function convoluteGradient$(dK, X, dY) {
-  const k = dK.rowDim;
-  const outH = dY.rowDim;
-  const outW = dY.colDim;
-
-  for (let u = 0; u < k; u++) {
-    const dKrow = dK.data[u];
-
-    for (let v = 0; v < k; v++) {
-      let s = 0;
-
-      for (let i = 0; i < outH; i++) {
-        const xRow = X.data[i + u];
-        const gRow = dY.data[i];
-
-        for (let j = 0; j < outW; j++) {
-          s += xRow[j + v] * gRow[j];
-        }
-      }
-
-      dKrow[v] += s;
-    }
-  }
-}
-
-// dX = convolute(dY, rot180(K))
-function convoluteInput$(dX, dY, K) {
-  const H = dX.rowDim;
-  const W = dX.colDim;
-  const k = K.rowDim;
-
-  const outH = dY.rowDim;
-  const outW = dY.colDim;
-
-  for (let i = 0; i < H; i++) {
-    const dxRow = dX.data[i];
-
-    for (let j = 0; j < W; j++) {
-      let s = 0;
-
-      // dY index (a,b) contributes to X(i,j) when (i-a) and (j-b) are within kernel bounds
-      const a0 = Math.max(0, i - (k - 1));
-      const a1 = Math.min(outH - 1, i);
-      const b0 = Math.max(0, j - (k - 1));
-      const b1 = Math.min(outW - 1, j);
-
-      for (let a = a0; a <= a1; a++) {
-        const gRow = dY.data[a];
-        const u = i - a; // 0..k-1
-
-        // rot180: row index flipped
-        const kRow = K.data[k - 1 - u];
-
-        for (let b = b0; b <= b1; b++) {
-          const v = j - b; // 0..k-1
-
-          // rot180: col index flipped
-          s += gRow[b] * kRow[k - 1 - v];
-        }
-      }
-
-      dxRow[j] += s;
-    }
   }
 }

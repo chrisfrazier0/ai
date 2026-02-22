@@ -41,4 +41,16 @@ export class Vector {
   scale(s) {
     return this.map((x) => x * s);
   }
+
+  sum() {
+    let s = 0;
+    for (const x of this.data) {
+      s += x;
+    }
+    return s;
+  }
+
+  mean() {
+    return this.sum() / this.size;
+  }
 }

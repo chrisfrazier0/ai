@@ -1,5 +1,4 @@
 import { assert } from '../lib/assert.js';
-import { Matrix } from '../lib/matrix.js';
 
 export class PaddingLayer {
   type = 'padding';
@@ -39,33 +38,12 @@ export class PaddingLayer {
       }
     }
 
-    // no-op padding
-    if (p === 0) {
-      this.#cache = { N, C, H, W, p };
-      return X;
-    }
-
-    // standard padding
     const Y = new Array(N);
     for (let n = 0; n < N; n++) {
-      const sample = X[n];
       const outSample = new Array(C);
-
       for (let c = 0; c < C; c++) {
-        const M = sample[c];
-        const P = Matrix.zeros(H + 2 * p, W + 2 * p);
-
-        for (let i = 0; i < H; i++) {
-          const srcRow = M.data[i];
-          const dstRow = P.data[i + p];
-          for (let j = 0; j < W; j++) {
-            dstRow[j + p] = srcRow[j];
-          }
-        }
-
-        outSample[c] = P;
+        outSample[c] = X[n][c].pad(p);
       }
-
       Y[n] = outSample;
     }
 
@@ -80,12 +58,6 @@ export class PaddingLayer {
       dY.length === N,
       `PaddingLayer.backward: expected batch length ${N}, got ${dY.length}`,
     );
-
-    // no-op padding
-    if (p === 0) {
-      this.#cache = null;
-      return dY;
-    }
 
     const dX = new Array(N);
     for (let n = 0; n < N; n++) {
@@ -103,18 +75,8 @@ export class PaddingLayer {
           `PaddingLayer.backward: expected ${H + 2 * p}x${W + 2 * p}, got ${G.rowDim}x${G.colDim} at sample ${n} channel ${c}`,
         );
 
-        const M = Matrix.zeros(H, W);
-        for (let i = 0; i < H; i++) {
-          const dstRow = M.data[i];
-          const srcRow = G.data[i + p];
-          for (let j = 0; j < W; j++) {
-            dstRow[j] = srcRow[j + p];
-          }
-        }
-
-        outSample[c] = M;
+        outSample[c] = G.unpad(p);
       }
-
       dX[n] = outSample;
     }
 
